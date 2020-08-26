@@ -9,6 +9,7 @@ import base64
 import re
 import sys
 import random
+import string
 import websocket
 from urllib import parse
 import asyncio
@@ -48,7 +49,7 @@ _LOGGER = logging.getLogger(__name__)
 SUPPORT_FLAGS = SUPPORT_TARGET_TEMPERATURE | SUPPORT_FAN_MODE
 
 DEFAULT_NAME = 'EKON Climate'
-DEFAULT_BASE_URL = "https://www.airconet.info/"
+DEFAULT_BASE_URL = "https://www.activate-ac.com/"
 
 CONF_USERNAME = 'username'
 CONF_PASSWORD = 'password'
@@ -263,7 +264,7 @@ class EkonClimateController():
         wssaddr = parse.urlunparse(parts)
         # wssaddr is: "wss://www.airconet.xyz/ws"
         _LOGGER.debug("async_setup_ws() - Connecting to WebSocket ws")
-        self._ws = websocket.WebSocketApp(wssaddr, header=headers, cookie="; ".join(["%s=%s" %(i, j) for i, j in cookies.items()]),
+        self._ws = websocket.WebSocketApp(wssaddr, sslopt={"cert_reqs": ssl.CERT_NONE}, header=headers, cookie="; ".join(["%s=%s" %(i, j) for i, j in cookies.items()]),
             on_open=lambda ws: self.ws_on_open(ws), # <--- This line is changed
             on_message=lambda ws, msg: self.ws_on_message (ws, msg),
             on_error=lambda ws, error: self.ws_on_error(ws, error), # Omittable (msg -> error)
@@ -329,16 +330,20 @@ class EkonClimateController():
         return await self.hass.async_add_executor_job(self.do_login)
 
     def do_login(self):
+        captcha = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(7))
         url = self._base_url + 'j_spring_security_check'
         url_params = {
+            'trialCnt': '0',
             'username': self._username,
             'password': self._password,
-            'remember-me': 'true',
+            'remember': 'true',
             'isServer': 'false',
-            'device-id': '02:00:00:00:00:00',
+            # 'device-id': '02:00:00:00:00:00',
+            'logCaptchaInput': captcha,
+            'mainCaptcha_val': captcha,
             'isDebug': 'tRue'
         }
-        result = self._http_session.post(url, params=url_params, data="")
+        result = self._http_session.post(url, verify=False, params=url_params, data="")
         if(result.status_code!=200):
             _LOGGER.error('EKON Login failed! Please check credentials!')
             _LOGGER.error(result.content)
