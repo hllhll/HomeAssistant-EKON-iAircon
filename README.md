@@ -56,12 +56,10 @@ This component is NOT CURRENTLY added to HACS default repository list.
      # Specify the name and password for your account
      username: my@account.com
      password: myPassword
-     # This specifies the server that the component would work with, I have only tried it with EKON server (Airconet APP)
+     # This specifies the server that the component would work with, I have only tried it with EKON server (Airconet+ APP)
      # Optional, defults to Airconet server
-     # Use this if you are using "Airconet" app - EKON main server
-     base_url: https://www.airconet.info/
-     # **UNTESTED** Alternative EKON tadiran server
-     # base_url: https://www.airconet.xyz/
+     # Use this if you are using "Airconet+" app - EKON main server
+     base_url: https://www.activate-ac.com/
    ```
 5. OPTIONAL: Add info logging to this component (to see if/how it works)
   
