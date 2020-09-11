@@ -1,5 +1,3 @@
-**Update: Just copy custom_components into /config folder, set custom_components permissions, and update your configuration.yaml with Either your EKON Account OR Tadiran connect account.**
-
 SmartThing users, Another guy jused developed a plugin for SmartThings ;) https://github.com/adidamty/smartthings-ekon-plugin
 
 # NOTE THIS IS NOT FULLY TESTED, NO RESPONSIBILITY WHATSOEVER - READ Fully before installing
@@ -39,7 +37,7 @@ This component is NOT CURRENTLY added to HACS default repository list.
 
 1. Copy the custom_components folder to your own hassio /config folder.
 
-2. **UPDATE: This may not be necessery i have recived reports that you could just log in with Aircon app even tough it's tadiran connect account so the primary server might just work "as-is"** ~~Choose the server you want to work with (AFAIK only Tadiran and EKON Main exist).~~
+2. **UPDATE: Currently only Tadiran server works Out-of-the-box ** ~~Choose the server you want to work with (AFAIK only Tadiran and EKON Main exist).~~
    ~~If you are using Airconet app you are currently using the EKON Main server~~
    ~~If you are using Tadiran connect app you are currently using (what I call) EKON Tadiran server~~
 
@@ -72,6 +70,16 @@ This component is NOT CURRENTLY added to HACS default repository list.
      default: error
      logs:
        custom_components.ekon: debug
+   ```
+6. OPTIONAL: Add entity names for the HVACs under the user. In the climate block under the ekon platform add the following, entitiy names are assigned by their id, that is the XXX under the default HVAC name EkonXXX
+   
+   ```yaml
+     username: ...
+     pass: ...
+     ...
+     name_mapping:
+     - id: XXX
+       name: MyHvac
    ```
 ## Troubleshooting
 - No AC Shows up on the Frontend
