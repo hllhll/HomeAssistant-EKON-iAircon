@@ -55,6 +55,8 @@ CONF_PASSWORD = 'password'
 CONF_URL_BASE = 'base_url'
 #CONF_NAME_MAPPING_METHOD = 'name_mapping_method'
 CONF_NAME_MAPPING = 'name_mapping'
+CONF_SSL_IGNORE = 'ssl_ignore'
+CONF_LOGIN_TYPE = 'login_type'
 DEFAULT_TIMEOUT = 10
 
 # What I recall are the min and max for the HVAC
@@ -66,6 +68,13 @@ HVAC_MODES = [HVAC_MODE_AUTO, HVAC_MODE_COOL, HVAC_MODE_DRY, HVAC_MODE_FAN_ONLY,
 
 FAN_MODES = [FAN_AUTO, FAN_LOW, FAN_MEDIUM, FAN_HIGH]
 
+
+LOGIN_TYPE_TADIRAN = "tadiran"
+LOGIN_TYPE_AIRCONETP = "airconet+"
+
+LOGIN_TYPES = [LOGIN_TYPE_TADIRAN, LOGIN_TYPE_AIRCONETP]
+
+
 # Since we're creating a platform for integration `Climate` extend the schema
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
@@ -74,7 +83,10 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Required(CONF_PASSWORD): cv.string,
     vol.Optional(CONF_TIMEOUT, default=DEFAULT_TIMEOUT): cv.positive_int,
     #vol.Optional(CONF_NAME_MAPPING_METHOD, default=''): cv:string
-    vol.Optional(CONF_NAME_MAPPING, default=[]): cv.ensure_list
+    vol.Optional(CONF_NAME_MAPPING, default=[]): cv.ensure_list,
+
+    vol.Optional(CONF_SSL_IGNORE, default=False): cv.boolean,
+    vol.Optional(CONF_LOGIN_TYPE, default=LOGIN_TYPE_TADIRAN): vol.In( LOGIN_TYPES )
 })
 
 EKON_PROP_ONOFF = 'onoff' 
@@ -166,32 +178,31 @@ MAP_FAN_HASS_TO_EKON = {
 @asyncio.coroutine
 async def async_setup_platform(hass, config, async_add_devices, discovery_info=None):
     _LOGGER.info('Setting up Ekon climate platform')
-    name = config.get(CONF_NAME)
-    base_url = config.get(CONF_URL_BASE)
-    timeout = config.get(CONF_TIMEOUT)
-    username = config.get(CONF_USERNAME)
-    password = config.get(CONF_PASSWORD)
-    name_mapping = config.get(CONF_NAME_MAPPING)
 
     _LOGGER.info('Creating Ekon climate controller')
-    controller = EkonClimateController(hass, async_add_devices, name, base_url, username, password, name_mapping)
+    controller = EkonClimateController(hass, config, async_add_devices)
     
     await controller.async_load_init_data()
 
 
 class EkonClimateController():
     """Ekon user account, inside this account there are all the ACs""" 
-    def __init__(self, hass, async_add_devices, name, base_url, username, password, name_mapping):
+    def __init__(self, hass, config, async_add_devices):
+        # , async_add_devices, name, base_url, username, password, name_mapping
+
         self._http_session = requests.Session()
         self.hass = hass
         self._async_add_devices = async_add_devices
-        self._name = name
-        self._base_url = base_url
-        self._username = username
+        self._name = config.get(CONF_NAME)
+        self._base_url = config.get(CONF_URL_BASE)
+        self._username = config.get(CONF_USERNAME)
         self._ws_sucsess = False
-        self._password = password
+        self._password = config.get(CONF_PASSWORD)
         self._devices = {}
-        self._name_mapping = name_mapping
+        self._name_mapping = config.get(CONF_NAME_MAPPING)
+
+        self._ssl_ignore = config.get(CONF_SSL_IGNORE)
+        self._login_type = config.get(CONF_LOGIN_TYPE)
 
     async def async_load_init_data(self):
          # Now since I don't have a clue in how to develop inside HASS, I took some ideas and implementation from HASS-sonoff-ewelink
