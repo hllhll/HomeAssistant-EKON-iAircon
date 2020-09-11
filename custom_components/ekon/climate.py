@@ -14,6 +14,7 @@ import websocket
 from urllib import parse
 import asyncio
 import logging
+import ssl
 import binascii
 import os.path
 import voluptuous as vol
@@ -241,7 +242,11 @@ class EkonClimateController():
 
     def ws_start_reciver_thread(self):
         # Could someone please explain why python-websocket doesn't offer a non-blocking event-driven WS interface?
-        self._ws_reciver_thread = threading.Thread(target=self._ws.run_forever)
+        run_forever_lambda = lambda : self._ws.run_forever()
+        if(self._ssl_ignore):
+            # https://github.com/websocket-client/websocket-client
+            run_forever_lambda = lambda : self._ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE, "check_hostname": False})
+        self._ws_reciver_thread = threading.Thread(target=run_forever_lambda)
         self._ws_reciver_thread.daemon = True
         self._ws_reciver_thread.start()
 
@@ -275,7 +280,7 @@ class EkonClimateController():
         wssaddr = parse.urlunparse(parts)
         # wssaddr is: "wss://www.airconet.xyz/ws"
         _LOGGER.debug("async_setup_ws() - Connecting to WebSocket ws")
-        self._ws = websocket.WebSocketApp(wssaddr, sslopt={"cert_reqs": ssl.CERT_NONE}, header=headers, cookie="; ".join(["%s=%s" %(i, j) for i, j in cookies.items()]),
+        self._ws = websocket.WebSocketApp(wssaddr, header=headers, cookie="; ".join(["%s=%s" %(i, j) for i, j in cookies.items()]),
             on_open=lambda ws: self.ws_on_open(ws), # <--- This line is changed
             on_message=lambda ws, msg: self.ws_on_message (ws, msg),
             on_error=lambda ws, error: self.ws_on_error(ws, error), # Omittable (msg -> error)
@@ -341,6 +346,8 @@ class EkonClimateController():
         return await self.hass.async_add_executor_job(self.do_login)
 
     def do_login(self):
+        # Tested theory: both tadiran-login and Airconet+ login would work out of the box with @Ronen's changes
+        # TODO: This would eventually break when Ekon realizes this is NOT HOW YOU DO CAPTCHA.
         captcha = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(7))
         url = self._base_url + 'j_spring_security_check'
         url_params = {
@@ -354,7 +361,10 @@ class EkonClimateController():
             'mainCaptcha_val': captcha,
             'isDebug': 'tRue'
         }
-        result = self._http_session.post(url, verify=False, params=url_params, data="")
+        verify = True
+        if self._ssl_ignore:
+            verify = False
+        result = self._http_session.post(url, verify=verify, params=url_params, data="")
         if(result.status_code!=200):
             _LOGGER.error('EKON Login failed! Please check credentials!')
             _LOGGER.error(result.content)
