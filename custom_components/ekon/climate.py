@@ -55,6 +55,7 @@ DEFAULT_BASE_URL = "https://www.activate-ac.com/"
 CONF_USERNAME = 'username'
 CONF_PASSWORD = 'password'
 CONF_URL_BASE = 'base_url'
+CONF_WS_URL = 'ws_url'
 #CONF_NAME_MAPPING_METHOD = 'name_mapping_method'
 CONF_NAME_MAPPING = 'name_mapping'
 CONF_SSL_IGNORE = 'ssl_ignore'
@@ -88,7 +89,8 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Optional(CONF_NAME_MAPPING, default=[]): cv.ensure_list,
 
     vol.Optional(CONF_SSL_IGNORE, default=False): cv.boolean,
-    vol.Optional(CONF_LOGIN_TYPE, default=LOGIN_TYPE_TADIRAN): vol.In( LOGIN_TYPES )
+    vol.Optional(CONF_LOGIN_TYPE, default=LOGIN_TYPE_TADIRAN): vol.In( LOGIN_TYPES ),
+    vol.Optional(CONF_WS_URL, default="wss://www.activate-ac.com/v2"): cv.string
 })
 
 EKON_PROP_ONOFF = 'onoff' 
@@ -205,6 +207,7 @@ class EkonClimateController():
 
         self._ssl_ignore = config.get(CONF_SSL_IGNORE)
         self._login_type = config.get(CONF_LOGIN_TYPE)
+        self._ws_url = config.get(CONF_WS_URL)
 
     async def async_load_init_data(self):
          # Now since I don't have a clue in how to develop inside HASS, I took some ideas and implementation from HASS-sonoff-ewelink
@@ -220,7 +223,7 @@ class EkonClimateController():
             if len(matching_items)>0:
                 dev_name = matching_items[0]['name']
 
-            _LOGGER.info('Adding Gree climate device to hass')
+            _LOGGER.info('Adding Ekon climate device to hass')
             newdev = EkonClimate(self, dev_raw['mac'], dev_raw['id'],
                 dev_raw[EKON_PROP_ONOFF], dev_raw[EKON_PROP_MODE], dev_raw[EKON_PROP_FAN], dev_raw[EKON_PROP_TARGET_TEMP], dev_raw[EKON_PROP_ENVIROMENT_TEMP], dev_raw['envTempShow'], dev_raw['light'], dev_name
             )
@@ -272,15 +275,10 @@ class EkonClimateController():
         headers['Sec-WebSocket-Version'] = '13'
         headers['Upgrade'] = 'websocket'
         cookies = self._http_session.cookies.get_dict()
-        # Build WS url from https
-        parsed = parse.urlparse(self._base_url + '/ws')
-        parts = list(parsed)
-        # replace https with wss
-        parts[0] = 'wss'
-        wssaddr = parse.urlunparse(parts)
-        # wssaddr is: "wss://www.airconet.xyz/ws"
+        # Tadiran: wss://www.airconet.xyz/ws
+        # Airconet+: wss://www.activate-ac.com/v2
         _LOGGER.debug("async_setup_ws() - Connecting to WebSocket ws")
-        self._ws = websocket.WebSocketApp(wssaddr, header=headers, cookie="; ".join(["%s=%s" %(i, j) for i, j in cookies.items()]),
+        self._ws = websocket.WebSocketApp(self._ws_url, header=headers, cookie="; ".join(["%s=%s" %(i, j) for i, j in cookies.items()]),
             on_open=lambda ws: self.ws_on_open(ws), # <--- This line is changed
             on_message=lambda ws, msg: self.ws_on_message (ws, msg),
             on_error=lambda ws, error: self.ws_on_error(ws, error), # Omittable (msg -> error)
@@ -316,6 +314,11 @@ class EkonClimateController():
         _LOGGER.debug('ws_on_message() - WS Got message:')
         _LOGGER.debug(msg)
         obj = json.loads(msg)
+        if "deviceStatus" in obj:
+            obj = obj["deviceStatus"]
+        if "allOn" in obj:
+            _LOGGER.debug("allOn message!")
+            return
         if type(obj) == type({}):
             # Wrap json in array since refreshACsJson accepts HVAC list
             obj = list([obj])
@@ -370,8 +373,10 @@ class EkonClimateController():
             _LOGGER.error(result.content)
             return False
         _LOGGER.debug('EKON Login Sucsess')
+        _LOGGER.debug(self._http_session.cookies)
         return True
 
+    # json, format:  {'id': 2728, 'mac': '60019443DD92', 'onoff': 85, 'light': 0, 'mode': 17, 'fan': 1, 'envTemp': 23, 'envTempShow': 23, 'tgtTemp': 21, 'deviceType': '0', 'type': 'AC'}
     def refreshACsJson(self,json):
         for dev_raw in json:
             """Refresh the only refreshed stuff 
