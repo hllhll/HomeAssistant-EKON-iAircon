@@ -1,7 +1,7 @@
 SmartThing users, Another guy jused developed a plugin for SmartThings ;) https://github.com/adidamty/smartthings-ekon-plugin
 
-# *Airconet+ support is broken*
-# NOTE THIS IS NOT FULLY TESTED, NO RESPONSIBILITY WHATSOEVER - READ Fully before installing
+# Airconet+ support is BROKEN
+# This is not fully tested, no responsibility whatsoever - READ Fully before installing
 Using this component may effect your hass installation stability, may report falsly the state of your HVAC, commands may seem to be working but they might not (such situation where u think you turned off the ac, but it didn't)
 
 IT MIGHT ALSO MESS APP THE REGULAR APP USAGE. In this case, you should remove the component and restart the iAircon box either by disconnecting it from the supply of the of the AC Controller and reconnect (i.e. the phone cord that doesn't go to the screen). Or by triping the switch in the electrical panel.
