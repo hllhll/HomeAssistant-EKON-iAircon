@@ -1,6 +1,5 @@
 SmartThing users, Another guy jused developed a plugin for SmartThings ;) https://github.com/adidamty/smartthings-ekon-plugin
 
-# Airconet+ support is BROKEN
 # This is not fully tested, no responsibility whatsoever - READ Fully before installing
 Using this component may effect your hass installation stability, may report falsly the state of your HVAC, commands may seem to be working but they might not (such situation where u think you turned off the ac, but it didn't)
 
@@ -50,14 +49,17 @@ Built on the bases of Gree Climate component for easier interfacing with HASS
      # This specifies the server that the component would work with, I have only tried it with EKON server (Airconet+ APP)
      # Optional, 
      # Use this if you are using "Airconet+" app - EKON main server
-     # base_url defults to Airconet server
+     # base_url and ws_url defults to Airconet server
      base_url: https://www.activate-ac.com/ 
-     # If you are using Tadiran Connect, use this instead
+     ws_url: wss://www.activate-ac.com/v2
+
+     # If you are using Tadiran Connect, use these instead
      # base_url: https://www.airconet.xyz/
+     # wss://www.airconet.xyz/ws
 
      # WARNING, Enabling this next option would MAKE YOUR CEDENTIALS PRUNE TO MAN-IN-THE-MIDDLE Attack
-     # Homeassistant ssl libraries has some issues with authenticating the www.activate-ac.com server SSL Certificate
-     # One really bad option is to dosable ssl checks altogether, you can use this switch to do that:
+     # Homeassistant ssl libraries in certain configurations has some issues with authenticating the www.activate-ac.com server SSL Certificate
+     # One really bad option is to disable ssl checks altogether, you can use this switch to do that:
      # ssl_ignore: True
    ```
 5. OPTIONAL: Add info logging to this component (to see if/how it works)
@@ -78,6 +80,13 @@ Built on the bases of Gree Climate component for easier interfacing with HASS
      - id: XXX
        name: MyHvac
    ```
+
+## Tips
+- If you have been using Tadiran connect, and you're booting up Airconet+ for the 1st time, it will "automatically-steal" your HVAC if you go to add HVAC even without resetting the device
+  - The impact that I've seen when trying going back: 1) App show AC as offline, 2) this HA Integration is not updated and stays frozen in time
+  - I Guess going back to tadiran is only possible with a reset
+  - What kind of sorcery is this? If you have idea how that works it might be usefull
+
 ## Troubleshooting (old, maybe usefull)
 - No AC Shows up on the Frontend
   - Q: Did you configured custom UI?
