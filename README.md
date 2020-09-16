@@ -1,4 +1,4 @@
-# Airconet+ USERS PLEASE SEE SSL ISSUE + WS_URL BELOW
+# Coming from an older version? See new config values ws_url + ssl_ignore
 
 # This is not fully tested, no responsibility whatsoever - READ Fully before installing
 Using this component may effect your hass installation stability, may report falsly the state of your HVAC, commands may seem to be working but they might not (such situation where u think you turned off the ac, but it didn't)
@@ -55,7 +55,7 @@ Built on the bases of Gree Climate component for easier interfacing with HASS
 
      # If you are using Tadiran Connect, use these instead
      # base_url: https://www.airconet.xyz/
-     # wss://www.airconet.xyz/ws
+     # ws_url: wss://www.airconet.xyz/ws
 
      # WARNING, Enabling this next option would MAKE YOUR CEDENTIALS PRUNE TO MAN-IN-THE-MIDDLE Attack
      # Homeassistant ssl libraries in certain configurations has some issues with authenticating the www.activate-ac.com server SSL Certificate
