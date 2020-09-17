@@ -213,7 +213,7 @@ class EkonClimateController():
          # Now since I don't have a clue in how to develop inside HASS, I took some ideas and implementation from HASS-sonoff-ewelink
         if not await self.async_do_login():
             return
-
+        _LOGGER.debug('EkonClimateController %s User has logged in' % self._username)
         devices = await self.async_query_devices()
         for dev_raw in devices:
             dev_name = "Ekon" + str(dev_raw['id'])
@@ -317,8 +317,10 @@ class EkonClimateController():
         if "deviceStatus" in obj:
             obj = obj["deviceStatus"]
         if "allOn" in obj:
+            # TODO: Should we handle it?
             _LOGGER.debug("allOn message!")
             return
+
         if type(obj) == type({}):
             # Wrap json in array since refreshACsJson accepts HVAC list
             obj = list([obj])
@@ -334,14 +336,17 @@ class EkonClimateController():
         """json response .... 'attachment': [< array of hvacs >]"""
         """ Each hvac is like """
         # [{'id': xxx, 'mac': 'xxxxxxxxxxxxx', 'onoff': 85, 'light': 0, 'mode': 17, 'fan': 1, 'envTemp': 23, 'envTempShow': 23, 'tgtTemp': 24}]
+        verify = True
+        if self._ssl_ignore:
+            verify = False
         url = self._base_url + '/dev/allStatus'
-        result = self._http_session.get(url)
+        result = self._http_session.get(url, verify=verify)
         if(result.status_code!=200):
             _LOGGER.error ("Error query_devices")
             return False
+        _LOGGER.info ("query_devices")
         _LOGGER.debug(result.content)
         attch = json.loads(result.content)['attachment']
-        _LOGGER.info ("query_devices")
         _LOGGER.info (attch)
         return attch  
 
@@ -492,7 +497,10 @@ class EkonClimate(ClimateEntity):
             self._last_on_state = False
             url = url + 'False'
 
-        result = self._controller._http_session.get(url)
+        verify = True
+        if self._ssl_ignore:
+            verify = False
+        result = self._controller._http_session.get(url, verify=verify)
         if(result.status_code!=200):
             _LOGGER.error(result.content)
             _LOGGER.error("TurnOnOff (onoff)error")
@@ -506,7 +514,10 @@ class EkonClimate(ClimateEntity):
         # mac, onoff, mode, fan, envtemp, tgttemp, 
         _LOGGER.info('Syncing to remote, state')
         _LOGGER.info(str(json.dumps(self._ekon_state_obj)))
-        result = self._controller._http_session.post(url, json=self._set_obj)
+        verify = True
+        if self._ssl_ignore:
+            verify = False
+        result = self._controller._http_session.post(url, json=self._set_obj, verify=verify)
         if(result.status_code!=200):
             _LOGGER.error(result.content)
             _LOGGER.error("SyncAndSet (properties)error")
@@ -561,7 +572,10 @@ class EkonClimate(ClimateEntity):
             'tgtTemp': self._ekon_state_obj['tgtTemp']
         }
         url = self._controller._base_url + 'dev/setHvac'
-        result = self._controller._http_session.post(json=obj)
+        verify = True
+        if self._ssl_ignore:
+            verify = False
+        result = self._controller._http_session.post(json=obj, verify=verify)
         if(result.status_code!=200):
             _LOGGER.error("SendStateToAc faild")
             _LOGGER.errpr(result.content)
