@@ -209,6 +209,9 @@ class EkonClimateController():
         self._login_type = config.get(CONF_LOGIN_TYPE)
         self._ws_url = config.get(CONF_WS_URL)
 
+        # TODO, Config? Timeouts? etc
+        self._ws_retries = 10
+
     async def async_load_init_data(self):
          # Now since I don't have a clue in how to develop inside HASS, I took some ideas and implementation from HASS-sonoff-ewelink
         if not await self.async_do_login():
@@ -304,9 +307,11 @@ class EkonClimateController():
         _LOGGER.info("ws_on_close() - ws closed")
         self._ws_sucsess = False
 
-        #Retry?
-        _LOGGER.info("ws_on_close() - Retry WS setup?")
-        self.hass.async_create_task(self.async_setup_ws())
+        #TODO: With timeouts etc.
+        if self._ws_retries>0:
+            _LOGGER.info("ws_on_close() - Retry WS setup")
+            self._ws_retries-=1
+            self.hass.async_create_task(self.async_setup_ws())
 
 
     
