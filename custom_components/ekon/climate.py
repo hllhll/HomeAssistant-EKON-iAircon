@@ -206,6 +206,9 @@ class EkonClimateController():
         self._name_mapping = config.get(CONF_NAME_MAPPING)
 
         self._ssl_ignore = config.get(CONF_SSL_IGNORE)
+        self._ssl_verify = not self._ssl_ignore
+
+
         self._login_type = config.get(CONF_LOGIN_TYPE)
         self._ws_url = config.get(CONF_WS_URL)
 
@@ -341,11 +344,8 @@ class EkonClimateController():
         """json response .... 'attachment': [< array of hvacs >]"""
         """ Each hvac is like """
         # [{'id': xxx, 'mac': 'xxxxxxxxxxxxx', 'onoff': 85, 'light': 0, 'mode': 17, 'fan': 1, 'envTemp': 23, 'envTempShow': 23, 'tgtTemp': 24}]
-        verify = True
-        if self._ssl_ignore:
-            verify = False
         url = self._base_url + '/dev/allStatus'
-        result = self._http_session.get(url, verify=verify)
+        result = self._http_session.get(url, verify=self._ssl_verify)
         if(result.status_code!=200):
             _LOGGER.error ("Error query_devices")
             return False
@@ -374,10 +374,7 @@ class EkonClimateController():
             'mainCaptcha_val': captcha,
             'isDebug': 'tRue'
         }
-        verify = True
-        if self._ssl_ignore:
-            verify = False
-        result = self._http_session.post(url, verify=verify, params=url_params, data="")
+        result = self._http_session.post(url, verify=self._ssl_verify, params=url_params, data="")
         if(result.status_code!=200):
             _LOGGER.error('EKON Login failed! Please check credentials!')
             _LOGGER.error(result.content)
@@ -502,10 +499,7 @@ class EkonClimate(ClimateEntity):
             self._last_on_state = False
             url = url + 'False'
 
-        verify = True
-        if self._ssl_ignore:
-            verify = False
-        result = self._controller._http_session.get(url, verify=verify)
+        result = self._controller._http_session.get(url, verify=self._controller._ssl_verify)
         if(result.status_code!=200):
             _LOGGER.error(result.content)
             _LOGGER.error("TurnOnOff (onoff)error")
@@ -519,10 +513,7 @@ class EkonClimate(ClimateEntity):
         # mac, onoff, mode, fan, envtemp, tgttemp, 
         _LOGGER.info('Syncing to remote, state')
         _LOGGER.info(str(json.dumps(self._ekon_state_obj)))
-        verify = True
-        if self._ssl_ignore:
-            verify = False
-        result = self._controller._http_session.post(url, json=self._set_obj, verify=verify)
+        result = self._controller._http_session.post(url, json=self._set_obj, verify=self._controller._ssl_verify)
         if(result.status_code!=200):
             _LOGGER.error(result.content)
             _LOGGER.error("SyncAndSet (properties)error")
@@ -577,10 +568,7 @@ class EkonClimate(ClimateEntity):
             'tgtTemp': self._ekon_state_obj['tgtTemp']
         }
         url = self._controller._base_url + 'dev/setHvac'
-        verify = True
-        if self._ssl_ignore:
-            verify = False
-        result = self._controller._http_session.post(json=obj, verify=verify)
+        result = self._controller._http_session.post(json=obj, verify=self._controller._ssl_verify)
         if(result.status_code!=200):
             _LOGGER.error("SendStateToAc faild")
             _LOGGER.errpr(result.content)
