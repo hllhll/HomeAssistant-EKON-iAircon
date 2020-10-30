@@ -681,6 +681,7 @@ class EkonClimate(ClimateEntity):
         _LOGGER.info('set_hvac_mode(): ' + str(hvac_mode))
         if hvac_mode == HVAC_MODE_OFF:
             self.TurnOnOff(False)
+            self.schedule_update_ha_state()
             return
         
         # Set new operation mode.
