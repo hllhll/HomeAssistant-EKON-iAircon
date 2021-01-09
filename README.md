@@ -1,6 +1,6 @@
-# Coming from an older version? See new config values ws_url + ssl_ignore
+# There's a new integration out there 100% local with no flashing of the device required! Feel free to try [HomeAssistant-ekon-local](https://github.com/hllhll/HomeAssistant-ekon-local)
 
-# This is not fully tested, no responsibility whatsoever - READ Fully before installing
+# General warnings
 Using this component may effect your hass installation stability, may report falsly the state of your HVAC, commands may seem to be working but they might not (such situation where u think you turned off the ac, but it didn't)
 
 IT MIGHT ALSO MESS APP THE REGULAR APP USAGE. In this case, you should remove the component and restart the iAircon box either by disconnecting it from the supply of the of the AC Controller and reconnect (i.e. the phone cord that doesn't go to the screen). Or by triping the switch in the electrical panel.
